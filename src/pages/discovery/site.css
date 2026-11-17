@@ -91,3 +91,14 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
 @media(hover:hover) and (pointer:fine){.da-cap-card:hover,.da-product-card:hover,.da-value-card:hover{transform:translateY(-5px)}}
 @media(hover:none){.da-cap-card,.da-product-card,.da-value-card{transform:none!important}}
 @media(prefers-reduced-motion:reduce){.da-cap-card:hover,.da-product-card:hover,.da-value-card:hover{transform:none!important}}
+.da-site{overflow:clip}
+.da-header{position:sticky;top:0;z-index:100}
+.da-footer-promise .da-brand{display:inline-flex;align-items:center;padding:8px 14px;background:var(--ivory);border-radius:10px}
+.da-footer-promise .da-brand-logo{width:168px;height:auto;max-height:58px}
+@media(max-width:700px){
+  .da-header{position:sticky;top:0}
+  .da-home-hero:before{animation:none}
+  .da-hero-art-label{backdrop-filter:none}
+  .da-footer-promise .da-brand-logo{width:150px;max-height:52px}
+  .da-cap-card:hover,.da-product-card:hover,.da-value-card:hover{transform:none;box-shadow:none}
+}

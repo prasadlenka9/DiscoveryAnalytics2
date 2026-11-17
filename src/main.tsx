@@ -20,15 +20,25 @@ import {
 function RoutedSite() {
   const location = useLocation()
   const reduceMotion = useReducedMotion()
+  const [compactViewport, setCompactViewport] = React.useState(() => window.matchMedia('(max-width: 700px)').matches)
+
+  React.useEffect(() => {
+    const media = window.matchMedia('(max-width: 700px)')
+    const update = (event: MediaQueryListEvent) => setCompactViewport(event.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  const stillMotion = reduceMotion || compactViewport
 
   return <AnimatePresence mode="wait" initial={false}>
     <motion.div
       key={location.pathname}
       className="da-route-transition"
-      initial={reduceMotion ? false : { opacity: 0, y: 18, filter: 'blur(5px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -12, filter: 'blur(4px)' }}
-      transition={{ duration: reduceMotion ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+      initial={stillMotion ? false : { opacity: 0, y: 18, filter: 'blur(5px)' }}
+      animate={stillMotion ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }}
+      exit={stillMotion ? { opacity: 1 } : { opacity: 0, y: -12, filter: 'blur(4px)' }}
+      transition={{ duration: stillMotion ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
     >
       <Routes location={location}>
         <Route path="/" element={<HomePage />} />

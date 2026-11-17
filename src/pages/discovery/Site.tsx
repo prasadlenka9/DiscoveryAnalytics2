@@ -20,6 +20,19 @@ const links = [
   ['Solutions', '/solutions'], ['Careers', '/careers'], ['Contact', '/contact'],
 ] as const
 
+function useCompactViewport() {
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 700px)').matches)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 700px)')
+    const update = (event: MediaQueryListEvent) => setCompact(event.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return compact
+}
+
 function Brand() {
   return <Link to="/" className="da-brand" aria-label="Discovery Analytics home">
     <img className="da-brand-logo" src="/images/discovery/brand/dalogo.png" alt="Discovery Analytics" />
@@ -68,13 +81,14 @@ function DiscoveryHead({ title, description }: { title: string; description: str
 
 function MotionEffects() {
   const { pathname } = useLocation()
+  const compactViewport = useCompactViewport()
 
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('.da-site')
     if (!root) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) return
+    if (reducedMotion || compactViewport) return
 
     gsap.registerPlugin(ScrollTrigger)
     const context = gsap.context(() => {
@@ -147,7 +161,7 @@ function MotionEffects() {
       listeners.forEach((cleanup) => cleanup())
       context.revert()
     }
-  }, [pathname])
+  }, [pathname, compactViewport])
 
   return null
 }
@@ -176,8 +190,10 @@ function Button({ to = '/contact', children, secondary = false }: { to?: string;
 }
 
 function HeroAnimation() {
+  const compactViewport = useCompactViewport()
+
   return <div className="da-hero-art" role="img" aria-label="Sculptural cobalt, orange and violet forms representing connected intelligence">
-    <Suspense fallback={null}><OrganicScene /></Suspense>
+    {!compactViewport && <Suspense fallback={null}><OrganicScene /></Suspense>}
     <div className="da-hero-art-label"><span>FIELD STUDY / 001</span><span>HUMAN + MACHINE</span></div>
     <div className="da-hero-art-coordinate">DA <i>∞</i> 01</div>
   </div>
