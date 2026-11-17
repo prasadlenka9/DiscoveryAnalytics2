@@ -1,11 +1,14 @@
-import { useEffect, useLayoutEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   ArrowDown, ArrowRight, ArrowUpRight, Boxes, BriefcaseBusiness, Play,
   Check, ChevronDown, Code2, HeartPulse, Menu, Network, PanelsTopLeft,
   Settings2, X,
 } from 'lucide-react'
-import './site.css'
+
+const OrganicScene = lazy(() => import('../../components/OrganicScene').then((module) => ({ default: module.OrganicScene })))
 
 const HR = 'hr@danalyticsinc.com'
 const PHONE1 = '(678) 383-4523'
@@ -16,6 +19,19 @@ const links = [
   ['Home', '/'], ['About', '/about'], ['Services', '/services'],
   ['Solutions', '/solutions'], ['Careers', '/careers'], ['Contact', '/contact'],
 ] as const
+
+function useCompactViewport() {
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 700px)').matches)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 700px)')
+    const update = (event: MediaQueryListEvent) => setCompact(event.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return compact
+}
 
 function Brand() {
   return <Link to="/" className="da-brand" aria-label="Discovery Analytics home">
@@ -64,33 +80,88 @@ function DiscoveryHead({ title, description }: { title: string; description: str
 }
 
 function MotionEffects() {
+  const { pathname } = useLocation()
+  const compactViewport = useCompactViewport()
+
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('.da-site')
-    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return
+    if (!root) return
 
-    const targets = root.querySelectorAll<HTMLElement>(
-      'main > section:not(.da-home-hero), .da-cap-card, .da-service-card, .da-job-card, .da-solution-row',
-    )
-    root.classList.add('da-motion-ready')
-    targets.forEach((target, index) => {
-      target.dataset.reveal = target.tagName === 'SECTION' ? 'section' : 'item'
-      target.style.setProperty('--da-reveal-delay', `${(index % 5) * 70}ms`)
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion || compactViewport) return
+
+    gsap.registerPlugin(ScrollTrigger)
+    const context = gsap.context(() => {
+      const heroTitle = root.querySelector<HTMLElement>('main h1')
+      if (heroTitle) {
+        gsap.fromTo(heroTitle, { autoAlpha: 0, y: 22 }, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.7,
+          delay: 0.06,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity,visibility',
+        })
+      }
+
+      const heroArtwork = root.querySelector<HTMLElement>('.da-hero-art')
+      if (heroArtwork) {
+        gsap.to(heroArtwork, {
+          yPercent: -7,
+          ease: 'none',
+          scrollTrigger: { trigger: heroArtwork, start: 'top bottom', end: 'bottom top', scrub: 0.7 },
+        })
+      }
+
+      gsap.utils.toArray<HTMLElement>('[data-count]').forEach((target) => {
+        const value = Number(target.dataset.count)
+        const counter = { value: 0 }
+        gsap.to(counter, {
+          value,
+          duration: 1.25,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: target, start: 'top 92%', once: true },
+          onUpdate: () => { target.textContent = Math.ceil(counter.value).toString().padStart(2, '0') },
+        })
+      })
+
+      gsap.utils.toArray<HTMLElement>(
+        'main > section:not(.da-home-hero), .da-cap-card, .da-service-card, .da-job-card, .da-solution-row',
+      ).forEach((target, index) => {
+        gsap.fromTo(target, { autoAlpha: 0, y: 20 }, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.65,
+          delay: (index % 4) * 0.045,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: target, start: 'top 90%', once: true },
+        })
+      })
+    }, root)
+
+    const magneticTargets = gsap.utils.toArray<HTMLElement>('.da-button, .da-video-trigger')
+    const listeners = magneticTargets.map((target) => {
+      const moveX = gsap.quickTo(target, 'x', { duration: 0.22, ease: 'power2.out' })
+      const moveY = gsap.quickTo(target, 'y', { duration: 0.22, ease: 'power2.out' })
+      const onMove = (event: PointerEvent) => {
+        const bounds = target.getBoundingClientRect()
+        moveX(((event.clientX - bounds.left - bounds.width / 2) / bounds.width) * 5)
+        moveY(((event.clientY - bounds.top - bounds.height / 2) / bounds.height) * 5)
+      }
+      const onLeave = () => { moveX(0); moveY(0) }
+      target.addEventListener('pointermove', onMove)
+      target.addEventListener('pointerleave', onLeave)
+      return () => {
+        target.removeEventListener('pointermove', onMove)
+        target.removeEventListener('pointerleave', onLeave)
+      }
     })
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return
-        entry.target.classList.add('is-visible')
-        observer.unobserve(entry.target)
-      })
-    }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' })
-    targets.forEach((target) => observer.observe(target))
-
     return () => {
-      observer.disconnect()
-      root.classList.remove('da-motion-ready')
+      listeners.forEach((cleanup) => cleanup())
+      context.revert()
     }
-  }, [])
+  }, [pathname, compactViewport])
 
   return null
 }
@@ -107,7 +178,7 @@ function ScrollToTop() {
 }
 
 function PageFrame({ title, description, children }: { title: string; description: string; children: ReactNode }) {
-  return <div className="da-site" id="top"><MotionEffects/><ScrollToTop/><DiscoveryHead title={title} description={description}/><SiteHeader />{children}<SiteFooter /></div>
+  return <div className="da-site" data-page={title.toLowerCase()} id="top"><MotionEffects/><ScrollToTop/><DiscoveryHead title={title} description={description}/><SiteHeader />{children}<SiteFooter /></div>
 }
 
 function Eyebrow({ children, light = false }: { children: ReactNode; light?: boolean }) {
@@ -119,26 +190,17 @@ function Button({ to = '/contact', children, secondary = false }: { to?: string;
 }
 
 function HeroAnimation() {
-  return <div className="da-hero-animation" role="img" aria-label="Animated visualization connecting people, technology, and business outcomes">
-    <div className="da-animation-heading"><span>DISCOVERY ANALYTICS / SIGNAL MAP</span><span><i /> LIVE SYSTEMS</span></div>
-    <div className="da-animation-stage" aria-hidden="true">
-      <div className="da-animation-orbit da-orbit-main"><i /></div>
-      <div className="da-animation-orbit da-orbit-secondary"><div /></div>
-      <div className="da-animation-orbit da-orbit-tertiary"><i /></div>
-      <svg className="da-animation-paths" viewBox="0 0 560 500" fill="none">
-        <path d="M65 122C135 135 181 185 280 250" />
-        <path d="M495 115C415 143 374 191 280 250" />
-        <path d="M77 376C153 346 205 302 280 250" />
-        <path d="M487 374C408 342 355 298 280 250" />
-      </svg>
-      <div className="da-animation-core"><span className="da-core-orbit"/><span className="da-core-mark">DA</span><strong>CONNECTED</strong><small>INTELLIGENCE</small></div>
-      <div className="da-animation-node da-node-human"><i/><span>HUMAN INSIGHT</span></div>
-      <div className="da-animation-node da-node-technology"><i/><span>TECHNOLOGY</span></div>
-      <div className="da-animation-node da-node-talent"><i/><span>TALENT</span></div>
-      <div className="da-animation-node da-node-strategy"><i/><span>STRATEGY</span></div>
-    </div>
-    <div className="da-animation-legend"><span>01 / PEOPLE</span><span>02 / PROCESS</span><span>03 / TECHNOLOGY</span></div>
+  const compactViewport = useCompactViewport()
+
+  return <div className="da-hero-art" role="img" aria-label="Sculptural cobalt, orange and violet forms representing connected intelligence">
+    {!compactViewport && <Suspense fallback={null}><OrganicScene /></Suspense>}
+    <div className="da-hero-art-label"><span>FIELD STUDY / 001</span><span>HUMAN + MACHINE</span></div>
+    <div className="da-hero-art-coordinate">DA <i>∞</i> 01</div>
   </div>
+}
+
+function AnimatedStat({ value, label }: { value: number; label: string }) {
+  return <div className="da-hero-stat"><strong data-count={value} aria-label={`${value} ${label}`}>{value.toString().padStart(2, '0')}</strong><span>{label}</span></div>
 }
 
 const capabilities = [
@@ -196,7 +258,7 @@ export function HomePage() {
   }, [videoOpen])
   return <PageFrame title="Home" description="Connect business, technology and talent with Discovery Analytics.">
     <main>
-      <section className="da-home-hero da-dark-section"><div className="da-wrap da-hero-layout"><div className="da-hero-copy"><Eyebrow light>WELCOME TO DISCOVERY ANALYTICS</Eyebrow><h1>Complexity,<br />connected.</h1><p>Professional technology assistance. Bring technology, talent and business into alignment. We help you navigate what’s complex — and build what comes next.</p><div className="da-actions"><Button>Let’s talk</Button><Button secondary to="/services">Explore services</Button><button className="da-video-trigger" type="button" onClick={() => setVideoOpen(true)}><span><Play size={17} fill="currentColor" /></span>Watch video</button></div><small>TAILORED SOLUTIONS. LASTING PARTNERSHIPS.</small></div><HeroAnimation /></div><div className="da-capability-ribbon"><div>ONE PARTNER.<br />CONNECTED CAPABILITIES.</div><b>IT services <i>/</i> Human capital <i>/</i> Product development</b><a href="#perspective">DISCOVER MORE ↓</a></div></section>
+      <section className="da-home-hero da-dark-section"><div className="da-wrap da-hero-layout"><div className="da-hero-copy"><Eyebrow light>WELCOME TO DISCOVERY ANALYTICS</Eyebrow><h1>Complexity,<br /><em>connected.</em></h1><p>Professional technology assistance. Bring technology, talent and business into alignment. We help you navigate what’s complex — and build what comes next.</p><div className="da-actions"><Button>Let’s talk</Button><Button secondary to="/services">Explore services</Button><button className="da-video-trigger" type="button" onClick={() => setVideoOpen(true)}><span><Play size={17} fill="currentColor" /></span>Watch video</button></div><small>TAILORED SOLUTIONS. LASTING PARTNERSHIPS.</small><div className="da-hero-stats"><AnimatedStat value={6} label="service areas"/><AnimatedStat value={6} label="solution pathways"/></div></div><HeroAnimation /></div><div className="da-capability-ribbon"><div>ONE PARTNER.<br />CONNECTED CAPABILITIES.</div><b>IT services <i>/</i> Human capital <i>/</i> Product development</b><a href="#perspective">DISCOVER MORE ↓</a></div></section>
       {videoOpen && <div className="da-video-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setVideoOpen(false) }}>
         <div className="da-video-dialog" role="dialog" aria-modal="true" aria-label="Discovery Analytics welcome video">
           <button className="da-video-close" type="button" aria-label="Close video" autoFocus onClick={() => setVideoOpen(false)}><X size={22}/></button>
@@ -209,6 +271,8 @@ export function HomePage() {
       <section className="da-section da-dark-section da-product-section"><div className="da-wrap"><Eyebrow light>SOFTWARE / E2</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Focused tools.<br />Connected thinking.</h2><p>Explore our E2 software offerings as a starting point. We’ll map your requirements and integration needs before recommending a fit.</p></div><div className="da-product-card"><div><small>E2 / 01</small><h3>Time Tracker</h3><p>Make time part of the bigger picture. Explore requirements, existing processes and the connections your organization needs.</p><Button>Discuss Time Tracker</Button></div><div className="da-time-study"><span>WORKFLOW TO EXPLORE</span><div>Capture <i>→</i> Review <i>→</i> Report</div><small>YOUR PEOPLE + YOUR PROCESSES + YOUR SYSTEMS</small></div></div><div className="da-product-list"><details><summary><span>E2 / 02</span><b>E-Recruit</b><small>Recruitment workflows</small><span>+</span></summary><p>Discuss your recruitment process, the information your team needs and the way an E-Recruit offering might fit your existing environment.</p><a href={`mailto:${HR}?subject=E-Recruit`}>Discuss E-Recruit <ArrowUpRight size={13}/></a></details><details><summary><span>E2 / 03</span><b>E-Invoice</b><small>Invoicing workflows</small><span>+</span></summary><p>Explore invoicing requirements, business processes and integration needs before assessing an E-Invoice fit.</p><a href={`mailto:${HR}?subject=E-Invoice`}>Discuss E-Invoice <ArrowUpRight size={13}/></a></details></div></div></section>
       <section className="da-section da-wrap"><Eyebrow>04 / WHY DISCOVERY ANALYTICS</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Confidence is<br />in the approach.</h2><p>The technology matters. So does the thinking, care and collaboration behind it. This is how we approach your work.</p></div><div className="da-principles">{[['01','Reliability by design','Continuity, recovery and resilience belong in the conversation from the start — not as an afterthought.'],['02','Expertise with context','We look at the architecture and the business behind it, connecting specialist knowledge to your priorities.'],['03','Quality in the details','A thoughtful approach to design, integration and ongoing support keeps the whole lifecycle in view.'],['04','Your goals, shared','Close collaboration, tailored advice and lasting relationships guide how we work with your team.']].map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
       <section className="da-section da-wrap"><Eyebrow>05 / THE PEOPLE BEHIND THE THINKING</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Different disciplines.<br />Shared purpose.</h2><div><p>Global perspective. Close collaboration. Our consultants work with clients to understand business challenges and bring strategic advice, technology and talent into the same conversation.</p><Link to="/careers" className="da-text-link">Explore careers at Discovery <ArrowUpRight size={14}/></Link></div></div><div className="da-collab-study"><div className="da-collab-orbit"><img className="da-collab-lines" src="/images/discovery/home/collaboration-connections.svg" alt=""/><img className="da-collab-focus" src="/images/discovery/home/shared-focus-orbit.png" alt=""/><span>Creative</span><span>Talent</span><strong>Your challenge</strong><span>Technology</span><span>Strategy</span></div><div className="da-values"><p><b>Equity and opportunity</b><br/>Room for different perspectives.</p><p><b>Innovation</b><br/>Creativity and continued development.</p><p><b>Teamwork</b><br/>Care for the responsibilities we share.</p></div></div></section>
+      <section className="da-section da-home-trust"><div className="da-wrap"><Eyebrow>07 / OUR TEAM &amp; CLIENT PERSPECTIVE</Eyebrow><div className="da-editorial-grid da-section-head"><div><h2>People make progress possible.</h2><p>Meet the experienced professionals who bring their expertise to client work.</p></div><div className="da-team-roles">{['Chief Executive Officer','Product Manager','CTO'].map((role,index)=><article key={role}><span>0{index+1} / TEAM</span><strong>{role}</strong></article>)}</div></div><figure className="da-client-note"><blockquote>“Responsive, professional and knowledgeable.”</blockquote><figcaption>ANONYMOUS CLIENT FEEDBACK / SOURCE WEBSITE</figcaption></figure></div></section>
+      <section className="da-section da-client-logos"><div className="da-wrap"><Eyebrow>08 / CLIENT COMPANIES</Eyebrow><h2>Client companies</h2><ul className="da-client-logo-grid">{Array.from({length: 8}, (_, index) => index + 1).map(number => <li key={number}><img src={`/images/discovery/clients/client-${number}.png`} alt={`Client company logo ${number}`} loading="lazy" /></li>)}</ul></div></section>
       <div className="da-wrap"><Partnership /></div>
       <section className="da-contact-feature"><div className="da-wrap"><div><Eyebrow light>06 / LET’S TALK</Eyebrow><h2>Your next chapter<br />starts here.</h2><p>A new platform. A critical hire. A more connected business. Tell us the challenge — let’s explore the possibilities together.</p><a href={`mailto:${HR}`} className="da-feature-email">{HR} <ArrowUpRight size={15}/></a><div className="da-feature-details"><span>{PHONE1}<br/>{PHONE2}</span><span>{ADDRESS}</span></div></div><ContactForm compact /></div></section>
     </main>
@@ -217,7 +281,7 @@ export function HomePage() {
 
 export function AboutPage() {
   return <PageFrame title="About" description="Meet Discovery Analytics and learn how we connect technology, people, and business.">
-    <main><SplitHero label="ABOUT / DISCOVERY ANALYTICS" title={<>Progress starts with<br className="desktop-only"/> the right connections.</>} text="We’re an emerging global human capital, recruitment and IT services organization. Tailored solutions and lasting partnerships are at the heart of our work." action="Meet your next partner" visual={<img className="da-subhero-image" src="/images/discovery/generated/team-collaboration.webp" alt="Three colleagues collaborating around a shared technology challenge"/>} />
+    <main><SplitHero label="ABOUT / DISCOVERY ANALYTICS" title={<>Progress starts with<br className="desktop-only"/> the right connections.</>} text="We’re an emerging global human capital, recruitment and IT services organization. Tailored solutions and lasting partnerships are at the heart of our work." action="Meet your next partner" visual={<img className="da-subhero-image" src="/images/neo-organic/about-organic.png" alt="Interlocking cobalt and ivory sculptures linked by an orange glass loop"/>} />
       <section className="da-section da-wrap"><Eyebrow>01 / OVERVIEW</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Business understanding.<br/>Technical perspective.</h2><div><p>Our consultants combine technical and business knowledge, working closely with each client to analyze challenges and shape practical advice.</p><p>Our work spans product development, product support, printing outsourcing and staffing. We connect the right disciplines around the needs of the organization, rather than treating each challenge in isolation.</p><p>Staff augmentation supports specific assignments and periods of peak demand, bringing qualified IT personnel into collaboration with existing internal teams.</p><Link to="/services" className="da-text-link">Explore our services <ArrowUpRight size={14}/></Link></div></div><div className="da-overview-grid">{[['Product development','From understanding the business challenge to shaping and building software.'],['Product support','Technical knowledge and close collaboration throughout an application’s life.'],['Printing outsourcing','Outsourced printing support considered alongside your operational needs.'],['Staffing','Technically qualified, customer-centric IT personnel to augment internal teams.']].map(([t,d])=><article key={t}><span>CAPABILITY / {t.toUpperCase()}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
       <section className="da-section da-dark-section"><div className="da-wrap"><Eyebrow light>02 / VISION</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Complete solutions.<br/>Shared responsibility.</h2><p>Our vision is to provide complete IT solutions and staff augmentation, with a commitment to quality, on-time delivery and work that respects the client’s budget.</p></div><div className="da-value-grid">{[['01','Understand','Understand the business before recommending a solution.'],['02','Innovate','Bring innovation and creativity to practical delivery.'],['03','Grow','Encourage professional growth and effective teamwork.'],['04','Commit','Uphold ethics, quality and commitment in every relationship.']].map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div></div></section>
       <section className="da-section da-wrap"><Eyebrow>03 / CULTURE</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Different disciplines.<br/>Shared purpose.</h2><p>We believe our entire team shares responsibility for equity and inclusion. Quality and human values are inseparable from the way we work.</p></div><div className="da-collab-study"><div className="da-culture-photo"><img src="/images/discovery/generated/culture-collaboration.webp" alt="A diverse team sharing ideas around a table" loading="lazy" /></div><div className="da-values"><p><b>Equity and inclusion</b><br/>We respect global communities and make room for authentic perspectives.</p><p><b>Learning and growth</b><br/>Innovation, creativity and personal development belong in everyday work.</p><p><b>Quality and human values</b><br/>We respect employees, vendors and customers, and how we work together.</p></div></div></section>
@@ -257,7 +321,7 @@ const solutionAreas = [
 
 export function SolutionsPage() {
   return <PageFrame title="Solutions" description="A practical set of connected technology solutions for business systems and infrastructure.">
-    <main><section className="da-subhero da-dark-section"><div className="da-wrap da-solutions-hero"><div><Eyebrow light>SOLUTIONS / DISCOVERY ANALYTICS</Eyebrow><h1>Less fragmentation.<br/>More forward<br/>motion.</h1><p>Good solutions connect more than systems. They connect business goals, people and a clear way to deliver — from applications to the infrastructure behind them.</p><Button>Explore your requirements</Button></div><div className="da-solution-index da-has-image"><img className="da-solution-index-image" src="/images/discovery/generated/connected-infrastructure.webp" alt="" aria-hidden="true"/><Eyebrow light>SOLUTION AREAS</Eyebrow>{[...solutionAreas.map(x=>[x.n,x.title]),['06','E2 Tips']].map(([n,t])=><a key={n} href={`#solution-${n}`}><span>{n}</span>{t}<ArrowDown size={14}/></a>)}</div></div></section>
+    <main><section className="da-subhero da-dark-section"><div className="da-wrap da-solutions-hero"><div><Eyebrow light>SOLUTIONS / DISCOVERY ANALYTICS</Eyebrow><h1>Less fragmentation.<br/>More forward<br/>motion.</h1><p>Good solutions connect more than systems. They connect business goals, people and a clear way to deliver — from applications to the infrastructure behind them.</p><Button>Explore your requirements</Button></div><div className="da-solution-index da-has-image"><img className="da-solution-index-image" src="/images/neo-organic/solutions-organic.png" alt="" aria-hidden="true"/><Eyebrow light>SOLUTION AREAS</Eyebrow>{[...solutionAreas.map(x=>[x.n,x.title]),['06','E2 Tips']].map(([n,t])=><a key={n} href={`#solution-${n}`}><span>{n}</span>{t}<ArrowDown size={14}/></a>)}</div></div></section>
       <section className="da-section da-wrap"><Eyebrow>CONNECTED SOLUTIONS / BUSINESS TO INFRASTRUCTURE</Eyebrow>{solutionAreas.map(s=><article className="da-solution-row" id={`solution-${s.n}`} key={s.n}><div><Eyebrow>{s.n} / SOLUTION</Eyebrow><h2>{s.title}</h2><p>{s.summary}</p><a className="da-text-link" href={`mailto:${HR}?subject=${encodeURIComponent(s.title)}`}>Discuss {s.title.toLowerCase()} <ArrowUpRight size={13}/></a></div><div className="da-solution-panel"><span>{s.steps}</span><ul>{s.items.map(x=><li key={x}><Check size={13}/>{x}</li>)}</ul></div></article>)}</section>
       <section className="da-section da-dark-section"><div className="da-wrap"><Eyebrow light>06 / E2 TIPS</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Focused tools.<br/>Connected thinking.</h2><p>Explore our E2 software offerings as a starting point. We’ll map your requirements and integration needs before recommending a fit.</p></div><div className="da-product-list da-e2-list"><details id="solution-06" open><summary><span>E2 / 01</span><b>Time Tracker</b><small>TIME WORKFLOWS</small><ChevronDown size={16}/></summary><p>Make time part of the bigger picture. Start a conversation about time tracking that fits your team. Together, we can explore requirements, existing processes and the connections your organization needs.</p><a href={`mailto:${HR}?subject=Time%20Tracker`}>Discuss Time Tracker <ArrowUpRight size={13}/></a><div className="da-time-study"><span>WORKFLOW TO EXPLORE</span><div>Capture <i>→</i> Review <i>→</i> Report</div><small>YOUR PEOPLE + YOUR PROCESSES + YOUR SYSTEMS</small></div></details><details><summary><span>E2 / 02</span><b>E-Recruit</b><small>RECRUITMENT WORKFLOWS</small><ChevronDown size={16}/></summary><p>Discuss your recruitment process, the information your team needs and the way an E-Recruit offering might fit your existing environment.</p><a href={`mailto:${HR}?subject=E-Recruit`}>Discuss E-Recruit <ArrowUpRight size={13}/></a></details><details><summary><span>E2 / 03</span><b>E-Invoice</b><small>INVOICING WORKFLOWS</small><ChevronDown size={16}/></summary><p>Explore invoicing requirements, business processes and integration needs before assessing an E-Invoice fit.</p><a href={`mailto:${HR}?subject=E-Invoice`}>Discuss E-Invoice <ArrowUpRight size={13}/></a></details></div><p className="da-fine-print">These are workflow discussion areas, not a demonstration of product features. We’ll confirm suitability and scope with you.</p></div></section>
       <Process/><div className="da-contact-cta da-dark-section"><div className="da-wrap"><div><Eyebrow light>THE START OF A GOOD PARTNERSHIP</Eyebrow><h2>Connect the pieces that matter.</h2><p>Tell us about your applications, infrastructure or workflows. We’ll explore the requirements before recommending a solution.</p></div><Button>Start a conversation</Button></div></div>
@@ -266,17 +330,12 @@ export function SolutionsPage() {
 }
 
 type Job = { tag: string; title: string; role: string; location: string; date: string; wage?: string; summary: string; skills: string; requirements: string; note: string; email?: string }
-const recentJobs: Job[] = [
-  { tag:'OCTOBER 2026 / VERIFY AVAILABILITY', title:'Database Architect', role:'Data Engineer', location:'Anywhere in USA · Multiple positions', date:'Published 10/06/2026', wage:'$164,736', summary:'Develop scalable, secure health-data pipelines using Python and SQL, with AWS Kubernetes, Airflow and Snowflake.', skills:'Python · SQL · AWS Kubernetes · Airflow · Snowflake', requirements:'MS + 1 year of experience.', note:'Availability must be verified with recruiting. The published wage is reproduced without an assumed pay period.', email:'jobs@danalyticsinc.com' },
-  { tag:'OCTOBER 2026 / VERIFY AVAILABILITY', title:'Software Developer', role:'Software Engineer', location:'Anywhere in USA', date:'Published 10/06/2026', wage:'$136,658', summary:'Develop Java/Spring microservices and REST APIs, working with Angular, SQL and AWS DevOps tools.', skills:'Java · Spring · REST API · Angular · SQL · AWS DevOps tools', requirements:'MS + 1 year of experience.', note:'Availability must be verified with recruiting. The published wage is reproduced without an assumed pay period.', email:'jobs@danalyticsinc.com' },
-]
 const archiveJobs: Job[] = [
-  { tag:'HISTORICAL NOTICE / 2025', title:'Software Developers', role:'Senior Programmer Analyst', location:'Alpharetta, GA · Multiple openings', date:'Published 02/15/2025 · Ended 03/15/2025', summary:'Mainframe software development and programming analysis using MVS, JCL, COBOL/CICS, TSO/ISPF, VSAM, SQL, DB2 and MQ Series.', skills:'MVS · JCL · COBOL/CICS · TSO/ISPF · VSAM · SQL · DB2 · MQ Series', requirements:'Bachelor’s degree + 5 years of experience.', note:'Competitive salary. Relocation to an unanticipated site; no national or international travel. This dated notice is historical, not a confirmed active opening.' },
-  { tag:'UNDATED / AVAILABILITY UNCONFIRMED', title:'Mainframe Developer', role:'Analyst / Developer', location:'Atlanta, GA', date:'No publication or closing date supplied', summary:'Work with mainframe datasets and JCL, SQL and relational databases, and Windows 11 / RHEL environments. Basic programming knowledge and a few years of analyst or developer experience are described in the notice.', skills:'Mainframe datasets · JCL · SQL · Relational databases · Windows 11 · RHEL · Basic programming', requirements:'A few years of analyst / developer experience; confirm requirements with recruiting.', note:'This source listing is undated. Contact recruiting to confirm whether applications are being accepted.' },
-  { tag:'HISTORICAL NOTICE / 2025', title:'Network and Computer Systems Administrators', role:'Network Engineer', location:'Alpharetta, GA · Multiple openings', date:'Published 05/01/2025 · Ended 05/31/2025', summary:'Network administration and engineering involving Cisco Prime, HP NNMi, NetBrain and Visio, including end-of-life inventory work.', skills:'Cisco Prime · HP NNMi · NetBrain · Visio · End-of-life inventory', requirements:'Master’s degree + 1 year of experience.', note:'Competitive salary. Relocation to an unanticipated site; no national or international travel. This dated notice is historical, not a confirmed active opening.' },
-  { tag:'HISTORICAL PUBLICATION / CONFIRM AVAILABILITY', title:'Software Developers', role:'Software Engineer', location:'Alpharetta, GA · Multiple openings', date:'Published 10/27/2025 · Published end date: 11/26/2205', summary:'Develop backend software and UI integration endpoints; debug and refine architecture; automate code quality; work with frameworks, libraries and algorithms; support CI, build and release; provide documentation, support and troubleshooting.', skills:'Java/J2EE · Struts · Shell/batch scripts · REST API · IntelliJ · Postman · SonarQube · Coverity · JaCoCo', requirements:'Master’s degree + 1 year OR BS + 5 years of experience.', note:'The end date “11/26/2205” is reproduced as published and appears to be a source error; it is not a confirmed current closing date. Verify with recruiting.' },
+  { tag:'HISTORICAL NOTICE / 2025', title:'Software Developers', role:'Senior Programmer Analyst', location:'Alpharetta, GA / Multiple openings', date:'Published 02/15/2025 / Ended 03/15/2025', summary:'Work using MVS, JCL, COBOL/CICS, TSO/ISPF, VSAM, SQL, DB2 and MQ Series.', skills:'MVS / JCL / COBOL/CICS / TSO/ISPF / VSAM / SQL / DB2 / MQ Series', requirements:'Bachelor degree + 5 years of experience.', note:'Competitive salary. Relocate to an unanticipated site. No national or international travel. The notice directs resumes to the President at 11535 Park Woods Circle, Ste A, Alpharetta, Georgia 30005. Historical listing; availability is unconfirmed.' },
+  { tag:'UNDATED / AVAILABILITY UNCONFIRMED', title:'Mainframe Developer', role:'Analyst / Developer', location:'Atlanta, GA', date:'No publication or closing date supplied', summary:'Familiarity with mainframe datasets and JCL, SQL and relational databases, Windows 11 and RHEL, with basic programming skills and a few years of analyst or developer experience.', skills:'Mainframe datasets / JCL / SQL / Relational databases / Windows 11 / RHEL / Basic programming', requirements:'A few years of analyst / developer experience; confirm requirements with recruiting.', note:'This source listing is undated. Contact recruiting to confirm whether applications are being accepted.' },
+  { tag:'HISTORICAL NOTICE / 2025', title:'Network and Computer Systems Administrators', role:'Network Engineer', location:'Alpharetta, GA / Multiple openings', date:'Published 05/01/2025 / Ended 05/31/2025', summary:'Work using Cisco Prime, HP NNMi, NetBrain and Visio; manage end-of-life inventory.', skills:'Cisco Prime / HP NNMi / NetBrain / Visio / End-of-life inventory', requirements:'Master degree + 1 year of experience.', note:'Competitive salary. Relocate to an unanticipated site. No national or international travel. The notice directs resumes to the President at 11535 Park Woods Circle, Ste A, Alpharetta, Georgia 30005. Historical listing; availability is unconfirmed.' },
+  { tag:'HISTORICAL PUBLICATION / CONFIRM AVAILABILITY', title:'Software Developers', role:'Software Engineer', location:'Alpharetta, GA / Multiple openings', date:'Published 10/27/2025 / Published end date: 11/26/2205', summary:'Design and develop backend software, UI integration endpoints, debugging tools and architecture enhancements. Work with platform tools, code quality, frameworks, libraries, algorithms, CI, build and release management; document, support, debug and troubleshoot.', skills:'Java/J2EE / Struts / Shell/batch scripts / REST API / IntelliJ / Postman / SonarQube / Coverity / JaCoCo', requirements:'Master degree + 1 year OR BS + 5 years of experience.', note:'The published end date 11/26/2205 appears to be a source error and is reproduced as shown. The notice directs resumes to Human Resources at 11535 Park Woods Circle, Ste A, Alpharetta, Georgia 30005. Verify availability with recruiting.' },
 ]
-
 function JobCard({ job }: { job: Job }) {
   const recipient = job.email || HR
   return <article className="da-job-card"><div className="da-job-summary"><Eyebrow>{job.tag}</Eyebrow><h3>{job.title}</h3><p>{job.role}</p><small>{job.location}</small><small>{job.date}</small>{job.wage && <div className="da-wage"><span>PUBLISHED WAGES</span><b>{job.wage}</b><small>Pay period not specified in the notice.</small></div>}</div><div className="da-job-detail"><p>{job.summary}</p><div className="da-job-skills">{job.skills}</div><p>{job.requirements}</p><p className="da-job-note">{job.note}</p><p>{job.email ? <>Email the notice contact: <a href={`mailto:${job.email}`}>{job.email}</a></> : 'For application inquiries, contact hr@danalyticsinc.com.'}</p><a className="da-button da-button-primary" href={`mailto:${recipient}?subject=${encodeURIComponent(`Application inquiry: ${job.title}`)}`}>Apply Now · Email HR <ArrowUpRight size={15}/></a></div></article>
@@ -286,7 +345,7 @@ export function CareersPage() {
   return <PageFrame title="Careers" description="Explore published opportunities and connect with Discovery Analytics recruiting.">
     <main><SplitHero label="CAREERS / DISCOVERY ANALYTICS" title="Work with Us." text="Bring your best to the assignments ahead. Connect your technical perspective with work shaped by collaboration, growth, equity and teamwork." action="Talk to recruiting" list={['Grow through the work.','Contribute as yourself.']} />
       <section className="da-section da-wrap da-careers-intro"><Eyebrow>DIFFERENT DISCIPLINES / SHARED PURPOSE</Eyebrow><div className="da-editorial-grid"><h2>Grow through the work.<br/>Contribute as yourself.</h2><p>We value authenticity, inclusion and access to opportunity. Personal and professional growth belong alongside the responsibilities we share.<br/><a href={`mailto:${HR}`} className="da-text-link">{HR} <ArrowUpRight size={13}/></a></p></div></section>
-      <section className="da-section da-light-band"><div className="da-wrap"><Eyebrow>01 / PUBLISHED OPPORTUNITIES</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Read the notice.<br/>Start a conversation.</h2><div><p>Below are all six published listings. The October 2026 notices are separated from historical and undated publications; publication does not confirm current availability.</p><p>Verify availability, requirements and application instructions with recruiting. All Apply Now actions use hr@danalyticsinc.com; the two newer notices also name jobs@danalyticsinc.com.</p></div></div><Eyebrow>OCTOBER 2026 / CONFIRM WITH RECRUITING</Eyebrow><h3 className="da-list-title">Recently published notices</h3><div className="da-job-list">{recentJobs.map(j=><JobCard key={j.title} job={j}/>)}</div><div className="da-archive-heading"><Eyebrow>PUBLICATION ARCHIVE / NOT CONFIRMED ACTIVE</Eyebrow><p>These source notices are retained for reference. Closed 2025 notices are historical; undated listings and the 2025 publication with an apparent end-date error require confirmation.</p></div><div className="da-job-list">{archiveJobs.map((j,i)=><JobCard key={`${j.title}-${i}`} job={j}/>)}</div></div></section>
+      <section className="da-section da-light-band"><div className="da-wrap"><Eyebrow>01 / PUBLISHED OPPORTUNITIES</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Read the notice.<br/>Start a conversation.</h2><div><p>The source site lists four opportunities: two dated 2025, one undated, and one published in 2025 with an apparent end-date typo. Their current availability is not confirmed.</p><p>Review each notice and email HR to confirm availability, requirements and application instructions.</p></div></div><Eyebrow>PUBLICATION ARCHIVE / CONFIRM AVAILABILITY</Eyebrow><h3 className="da-list-title">Published notices</h3><div className="da-job-list">{archiveJobs.map((j,i)=><JobCard key={`${j.title}-${i}`} job={j}/>)}</div></div></section>
       <section className="da-section da-dark-section"><div className="da-wrap da-career-contact"><div><Eyebrow light>02 / CONNECT WITH RECRUITING</Eyebrow><h2>Questions about<br/>your next step?</h2><p>Contact HR about published notices, availability or how to apply. Follow the recipient and mailing instructions in the relevant notice.</p><a href={`mailto:${HR}`} className="da-feature-email">{HR} <ArrowUpRight size={14}/></a><div className="da-mailing"><Eyebrow light>MAILING ADDRESS FOR PUBLISHED NOTICES</Eyebrow><p>{ADDRESS} USA</p></div></div><div className="da-employer-card"><Eyebrow>EMPLOYER ACCESS</Eyebrow><h3>Post Job</h3><p>Sign in to your employer account.</p><a className="da-button da-button-primary" href={`mailto:${HR}?subject=Employer%20access`}>Login <ArrowUpRight size={15}/></a><a href={`mailto:${HR}?subject=Employer%20access`}>New here? Contact IT Team <ArrowUpRight size={13}/></a><small>{HR}</small></div></div></section>
     </main>
   </PageFrame>
@@ -308,14 +367,14 @@ function ContactForm({ compact = false }: { compact?: boolean }) {
     <h3>What are you working on?</h3><p>Fields marked * are required.</p>
     <div className="da-form-grid"><label>Full name *<input name="name" required placeholder="Your full name" autoComplete="name" /></label><label>Work email *<input name="email" required type="email" placeholder="you@company.com" autoComplete="email" /></label><label>Company<input name="company" placeholder="Your organization" autoComplete="organization" /></label><label>Service of interest<select name="interest" defaultValue=""><option value="" disabled>Select a service</option>{['Business','E-Business','Health Care','Maintenance services','ERP Solutions','Animation','Application Development','Business Continuity','Networking','Staffing','General conversation'].map(x=><option key={x}>{x}</option>)}</select></label></div>
     <label>How can we help? *<textarea name="message" required placeholder="Tell us about your goals, challenges or talent needs." /></label>
-    <small>Please don’t include confidential information. Your details will be used to respond to this inquiry.</small>
-    <button className="da-button da-button-primary" type="submit">Send inquiry <ArrowUpRight size={15}/></button>
+    <div className="da-form-submit-row"><small>Please don’t include confidential information. Your details will be used to respond to this inquiry.</small>
+    <button className="da-button da-button-primary" type="submit">Send inquiry <ArrowUpRight size={15}/></button></div>
   </form>
 }
 
 export function ContactPage() {
   return <PageFrame title="Contact" description="Start a conversation with Discovery Analytics about business, technology, and talent needs.">
-    <main><section className="da-contact-hero da-dark-section"><div className="da-wrap"><div className="da-breadcrumb"><Link to="/">Home</Link><span>/</span>Contact</div><Eyebrow light>CONTACT / DISCOVERY ANALYTICS</Eyebrow><div className="da-editorial-grid"><div><h1>Your next chapter<br/>starts here.</h1><p>A new platform. A critical hire. A more connected business. Whether you’re exploring our services, requesting a quote or just saying hello, we’d love to hear from you.</p></div><div className="da-contact-topics"><Eyebrow light>LET’S START WITH WHAT YOU NEED</Eyebrow><div><b>Services &amp; solutions</b><p>Discuss your requirements or request a quote.</p></div><div><b>Talent &amp; opportunities</b><p>Connect about staffing, assignments or published notices.</p></div><div><b>General conversation</b><p>Ask a question or introduce your organization.</p></div></div></div></div></section>
+    <main><section className="da-contact-hero da-dark-section"><div className="da-wrap"><div className="da-breadcrumb"><Link to="/">Home</Link><span>/</span>Contact</div><Eyebrow light>CONTACT / DISCOVERY ANALYTICS</Eyebrow><div className="da-editorial-grid"><div><h1>Your next chapter<br/>starts here.</h1><p>A new platform. A critical hire. A more connected business. Whether you’re exploring our services, requesting a quote or just saying hello, we’d love to hear from you.</p></div><div className="da-contact-topics"><Eyebrow light>LET’S START WITH WHAT YOU NEED</Eyebrow><div><b>Services &amp; solutions</b><p>Discuss your requirements or request a quote.</p></div><div><b>Talent &amp; opportunities</b><p>Connect about staffing, assignments or published notices.</p></div><div><b>General conversation</b><p>Ask a question or introduce your organization.</p></div><img className="da-contact-art" src="/images/neo-organic/contact-organic.png" alt="An open cobalt and chrome ring touched by an orange ribbon" /></div></div></div></section>
       <section className="da-contact-main da-dark-section"><div className="da-wrap da-contact-layout"><div className="da-contact-copy"><Eyebrow light>01 / LET’S TALK</Eyebrow><h2>A conversation is a good place to begin.</h2><p>Tell us about your priorities and the support you’re looking for. Use the inquiry form or contact us directly.</p><div className="da-contact-detail"><Eyebrow light>WRITE TO US</Eyebrow><a href={`mailto:${HR}`}>{HR} <ArrowUpRight size={14}/></a></div><div className="da-contact-detail"><Eyebrow light>CALL US</Eyebrow><a href="tel:+16783834523">{PHONE1}</a><a href="tel:+15109673651">{PHONE2}</a></div><div className="da-contact-detail"><Eyebrow light>FIND US</Eyebrow><span>11535 Parkwoods Circle, Suite A<br/>Alpharetta, GA 30005</span></div></div><ContactForm /></div></section>
       <section className="da-section da-wrap da-stay-connected"><Eyebrow>02 / STAY CONNECTED</Eyebrow><div className="da-editorial-grid"><div className="da-location-card"><span>ALPHARETTA / GEORGIA / USA</span><h3>Discovery Analytics</h3><p>{ADDRESS}</p><a href={`mailto:${HR}`}>Email our team before visiting <ArrowUpRight size={13}/></a></div><div><h2>Help us understand the context.</h2><p>A brief description of your goals, the service you’re considering and any relevant business context is a useful starting point.</p><p>For career inquiries, please reference the published role and confirm availability with recruiting. Avoid sending confidential project or personal information through the inquiry form.</p><Link to="/careers" className="da-text-link">Career inquiries · Email HR <ArrowUpRight size={13}/></Link></div></div></section>
     </main>
