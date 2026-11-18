@@ -94,12 +94,12 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
 .da-site{overflow:clip}
 .da-header{position:sticky;top:0;z-index:100}
 .da-footer-promise .da-brand{display:inline-flex;align-items:center;padding:0;background:transparent;border-radius:0}
-.da-footer-promise .da-brand-logo{width:168px;height:auto;max-height:58px}
+.da-footer-promise .da-brand-logo{display:block;width:208px;height:auto;max-height:none;filter:brightness(1.12) drop-shadow(0 0 12px rgba(86,190,225,.16))}
 @media(max-width:700px){
   .da-header{position:sticky;top:0}
   .da-home-hero:before{animation:none}
   .da-hero-art-label{backdrop-filter:none}
-  .da-footer-promise .da-brand-logo{width:150px;max-height:52px}
+  .da-footer-promise .da-brand-logo{width:178px;max-height:none}
   .da-cap-card:hover,.da-product-card:hover,.da-value-card:hover{transform:none;box-shadow:none}
 }
 

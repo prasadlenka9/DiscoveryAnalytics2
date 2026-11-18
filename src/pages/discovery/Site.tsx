@@ -60,7 +60,7 @@ function SiteFooter() {
       <div className="da-footer-promise"><Brand /><h2>Technology. Talent.<br />Forward.</h2></div>
       <div className="da-footer-nav">
         <div><b>EXPLORE</b>{links.slice(1, 4).map(([label, href]) => <Link key={href} to={href}>{label}</Link>)}</div>
-        <div><b>CONNECT</b><Link to="/careers">Careers ↗</Link><Link to="/contact">Contact <ArrowUpRight size={12}/></Link><a href={`mailto:${HR}`}>Email us ↗</a></div>
+        <div><b>CONNECT</b><Link to="/careers">Careers <ArrowUpRight size={13} aria-hidden="true" /></Link><Link to="/contact">Contact <ArrowUpRight size={13} aria-hidden="true" /></Link><a href={`mailto:${HR}`}>Email us <ArrowUpRight size={13} aria-hidden="true" /></a></div>
       </div>
     </div>
     <div className="da-footer-divider" aria-hidden="true" />
