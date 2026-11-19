@@ -26,7 +26,7 @@ export function OrganicScene() {
     const keyLight = new THREE.DirectionalLight('#ffffff', 3.4)
     keyLight.position.set(-3, 4, 5)
     scene.add(keyLight)
-    const violetLight = new THREE.PointLight('#8f57ff', 22, 11)
+    const violetLight = new THREE.PointLight('#56d8bd', 18, 11)
     violetLight.position.set(2.5, -1.8, 1.5)
     scene.add(violetLight)
 
@@ -37,28 +37,28 @@ export function OrganicScene() {
 
     const core = new THREE.Mesh(
       new THREE.IcosahedronGeometry(1.25, 5),
-      new THREE.MeshPhysicalMaterial({ color: '#4163f5', roughness: 0.2, metalness: 0.22, clearcoat: 1, clearcoatRoughness: 0.15 }),
+      new THREE.MeshPhysicalMaterial({ color: '#238dcc', roughness: 0.2, metalness: 0.22, clearcoat: 1, clearcoatRoughness: 0.15 }),
     )
     core.scale.set(0.94, 1.08, 0.8)
     sculpture.add(core)
 
     const ribbon = new THREE.Mesh(
       new THREE.TorusGeometry(1.52, 0.16, 24, 120),
-      new THREE.MeshPhysicalMaterial({ color: '#ff6a24', roughness: 0.19, metalness: 0.55, clearcoat: 0.9 }),
+      new THREE.MeshPhysicalMaterial({ color: '#4bd457', roughness: 0.19, metalness: 0.55, clearcoat: 0.9 }),
     )
     ribbon.rotation.set(1.05, 0.2, -0.3)
     sculpture.add(ribbon)
 
     const orbit = new THREE.Mesh(
       new THREE.TorusGeometry(1.82, 0.018, 8, 144),
-      new THREE.MeshBasicMaterial({ color: '#b48cff', transparent: true, opacity: 0.8 }),
+      new THREE.MeshBasicMaterial({ color: '#56d8bd', transparent: true, opacity: 0.8 }),
     )
     orbit.rotation.set(0.9, 0.4, 0.65)
     sculpture.add(orbit)
 
     const mote = new THREE.Mesh(
       new THREE.SphereGeometry(0.115, 24, 24),
-      new THREE.MeshPhysicalMaterial({ color: '#b48cff', roughness: 0.12, metalness: 0.35, emissive: '#4c2287', emissiveIntensity: 0.8 }),
+      new THREE.MeshPhysicalMaterial({ color: '#9beed8', roughness: 0.12, metalness: 0.35, emissive: '#155d78', emissiveIntensity: 0.8 }),
     )
     mote.position.set(1.55, 0.9, 0.35)
     sculpture.add(mote)
