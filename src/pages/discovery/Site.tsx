@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
-  ArrowDown, ArrowRight, ArrowUpRight, Boxes, BriefcaseBusiness, Play,
+  ArrowDown, ArrowRight, ArrowUpRight, Boxes, BriefcaseBusiness, Pause, Play,
   Check, ChevronDown, Code2, HeartPulse, Menu, Network, PanelsTopLeft,
   Settings2, X,
 } from 'lucide-react'
@@ -73,6 +73,36 @@ function SiteFooter() {
     <div className="da-footer-divider" aria-hidden="true" />
     <div className="da-footer-bottom"><span>© 2026 Discovery Analytics. All rights reserved.</span><span>HUMAN INSIGHT. TECHNOLOGY IN MOTION.</span><a href="#top">BACK TO TOP ↑</a></div>
   </footer>
+}
+
+function ClientLogoMarquee() {
+  const [paused, setPaused] = useState(false)
+  const logos = Array.from({ length: 8 }, (_, index) => index + 1)
+  const renderLogos = (duplicate = false) => logos.map(number => (
+    <li key={`${duplicate ? 'copy-' : ''}${number}`}>
+      <img
+        src={`/images/discovery/clients/client-${number}.png`}
+        alt={duplicate ? '' : `Client company logo ${number}`}
+        loading="lazy"
+      />
+    </li>
+  ))
+
+  return <div className={`da-client-logo-marquee${paused ? ' is-paused' : ''}`}>
+    <div className="da-client-logo-controls">
+      <span>CLIENT LOGOS</span>
+      <button type="button" aria-pressed={paused} aria-label={paused ? 'Resume client logo slideshow' : 'Pause client logo slideshow'} onClick={() => setPaused(!paused)}>
+        {paused ? <Play size={12} aria-hidden="true" /> : <Pause size={12} aria-hidden="true" />}
+        {paused ? 'Resume flow' : 'Pause flow'}
+      </button>
+    </div>
+    <div className="da-client-logo-viewport" role="region" aria-label="Client company logos">
+      <div className="da-client-logo-track">
+        <ul className="da-client-logo-row">{renderLogos()}</ul>
+        <ul className="da-client-logo-row" aria-hidden="true">{renderLogos(true)}</ul>
+      </div>
+    </div>
+  </div>
 }
 
 function DiscoveryHead({ title, description }: { title: string; description: string }) {
@@ -278,7 +308,7 @@ export function HomePage() {
       <section className="da-section da-wrap"><Eyebrow>04 / WHY DISCOVERY ANALYTICS</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Confidence is<br />in the approach.</h2><p>The technology matters. So does the thinking, care and collaboration behind it. This is how we approach your work.</p></div><div className="da-principles">{[['01','Reliability by design','Continuity, recovery and resilience belong in the conversation from the start — not as an afterthought.'],['02','Expertise with context','We look at the architecture and the business behind it, connecting specialist knowledge to your priorities.'],['03','Quality in the details','A thoughtful approach to design, integration and ongoing support keeps the whole lifecycle in view.'],['04','Your goals, shared','Close collaboration, tailored advice and lasting relationships guide how we work with your team.']].map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
       <section className="da-section da-wrap"><Eyebrow>05 / THE PEOPLE BEHIND THE THINKING</Eyebrow><div className="da-editorial-grid da-section-head"><h2>Different disciplines.<br />Shared purpose.</h2><div><p>Global perspective. Close collaboration. Our consultants work with clients to understand business challenges and bring strategic advice, technology and talent into the same conversation.</p><Link to="/careers" className="da-text-link">Explore careers at Discovery <ArrowUpRight size={14}/></Link></div></div><div className="da-collab-study"><div className="da-collab-orbit"><img className="da-collab-lines" src="/images/discovery/home/collaboration-connections.svg" alt=""/><img className="da-collab-focus" src="/images/discovery/home/shared-focus-orbit.png" alt=""/><span>Creative</span><span>Talent</span><strong>Your challenge</strong><span>Technology</span><span>Strategy</span></div><div className="da-values"><p><b>Equity and opportunity</b><br/>Room for different perspectives.</p><p><b>Innovation</b><br/>Creativity and continued development.</p><p><b>Teamwork</b><br/>Care for the responsibilities we share.</p></div></div></section>
       <section className="da-section da-home-trust"><div className="da-wrap"><Eyebrow>07 / OUR TEAM &amp; CLIENT PERSPECTIVE</Eyebrow><div className="da-editorial-grid da-section-head"><div><h2>People make progress possible.</h2><p>Meet the experienced professionals who bring their expertise to client work.</p></div><div className="da-team-roles">{['Chief Executive Officer','Product Manager','CTO'].map((role,index)=><article key={role}><span>0{index+1} / TEAM</span><strong>{role}</strong></article>)}</div></div><figure className="da-client-note"><blockquote>“Responsive, professional and knowledgeable.”</blockquote><figcaption>ANONYMOUS CLIENT FEEDBACK / SOURCE WEBSITE</figcaption></figure></div></section>
-      <section className="da-section da-client-logos"><div className="da-wrap"><Eyebrow>08 / CLIENT COMPANIES</Eyebrow><h2>Client companies</h2><ul className="da-client-logo-grid">{Array.from({length: 8}, (_, index) => index + 1).map(number => <li key={number}><img src={`/images/discovery/clients/client-${number}.png`} alt={`Client company logo ${number}`} loading="lazy" /></li>)}</ul></div></section>
+      <section className="da-section da-client-logos"><div className="da-wrap"><Eyebrow>08 / CLIENT COMPANIES</Eyebrow><h2>Client companies</h2><ClientLogoMarquee /></div></section>
       <div className="da-wrap"><Partnership /></div>
       <section className="da-contact-feature"><div className="da-wrap"><div><Eyebrow light>06 / LET’S TALK</Eyebrow><h2>Your next chapter<br />starts here.</h2><p>A new platform. A critical hire. A more connected business. Tell us the challenge — let’s explore the possibilities together.</p><a href={`mailto:${HR}`} className="da-feature-email">{HR} <ArrowUpRight size={15}/></a><div className="da-feature-details"><span>{PHONE1}<br/>{PHONE2}</span><span>{ADDRESS}</span></div></div><ContactForm compact /></div></section>
     </main>

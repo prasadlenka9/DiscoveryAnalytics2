@@ -167,16 +167,26 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
 .da-form-submit-row .da-button{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:9px;margin:0;white-space:nowrap}
 .da-client-logos{background:#e5f3f7}
 .da-client-logos h2{margin:20px 0 30px;font-size:clamp(36px,5vw,62px);letter-spacing:-.065em;line-height:1}
-.da-client-logo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
-.da-client-logo-grid li{display:grid;place-items:center;min-height:126px;padding:20px;background:var(--paper);border:1px solid var(--line)}
-.da-client-logo-grid img{display:block;width:min(100%,190px);height:60px;object-fit:contain}
-@media(max-width:1000px){.da-client-logo-grid li{min-height:108px}}
+.da-client-logo-marquee{margin-top:28px}
+.da-client-logo-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+.da-client-logo-controls>span{font:10px ui-monospace,'Cascadia Code',Consolas,monospace;letter-spacing:.12em;color:#526a77}
+.da-client-logo-controls button{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--ink);font:600 11px/1.2 ui-sans-serif,system-ui,sans-serif;cursor:pointer;padding:8px 10px;border-radius:99px}
+.da-client-logo-controls button:hover,.da-client-logo-controls button:focus-visible{background:#d8f2f9;outline:2px solid #238dcc;outline-offset:2px}
+.da-client-logo-viewport{overflow:hidden;mask-image:linear-gradient(90deg,transparent 0,#000 4%,#000 96%,transparent 100%)}
+.da-client-logo-track{display:flex;width:max-content;animation:da-client-logo-flow 42s linear infinite;will-change:transform}
+.da-client-logo-row{display:flex;align-items:center;gap:14px;margin:0;padding:8px 7px;list-style:none}
+.da-client-logo-row li{display:grid;place-items:center;flex:0 0 clamp(122px,13vw,172px);height:84px;padding:14px 18px;background:var(--paper);border:1px solid rgba(9,45,64,.1);border-radius:12px}
+.da-client-logo-row img{display:block;width:100%;max-width:130px;height:34px;object-fit:contain}
+.da-client-logo-marquee.is-paused .da-client-logo-track,.da-client-logo-marquee:hover .da-client-logo-track{animation-play-state:paused}
+@keyframes da-client-logo-flow{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.da-client-logo-track{animation:none;transform:none;will-change:auto}.da-client-logo-viewport{overflow-x:auto;mask-image:none}.da-client-logo-row[aria-hidden="true"]{display:none}}
 @media(max-width:700px){
   .da-form-submit-row{align-items:stretch;flex-direction:column;gap:14px}
   .da-form-submit-row .da-fine-print,.da-form-submit-row small{min-width:0;order:0}
   .da-form-submit-row .da-button{align-self:flex-start;min-height:48px;padding-inline:20px}
   .da-client-logos h2{margin:16px 0 22px;font-size:42px}
-  .da-client-logo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .da-client-logo-grid li{min-height:94px;padding:12px}
-  .da-client-logo-grid img{height:48px}
+  .da-client-logo-marquee{margin-top:22px}
+  .da-client-logo-row{gap:9px}
+  .da-client-logo-row li{flex-basis:116px;height:70px;padding:10px 13px}
+  .da-client-logo-row img{height:29px}
 }
