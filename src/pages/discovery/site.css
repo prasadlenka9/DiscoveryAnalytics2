@@ -260,3 +260,9 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
 .da-footer-nav>div:first-child>b{color:#176c9e!important;}
 .da-footer-nav>div:nth-child(2)>b{color:#176c9e!important;}
 .da-footer-nav>div>b{font-weight:800!important;}
+
+/* Keep the people values panel legible beside the collaboration artwork. */
+.da-collab-study .da-values{background:#fff;color:#092d40;border:1px solid rgba(9,45,64,.1);border-radius:14px;padding:clamp(22px,3vw,34px);box-shadow:0 16px 40px rgba(9,45,64,.12);}
+.da-collab-study .da-values p{color:#405c69;line-height:1.6;margin:0;padding:13px 0;border-bottom:1px solid #d7e4eb;}
+.da-collab-study .da-values p:last-child{border-bottom:0;padding-bottom:0;}
+.da-collab-study .da-values b{color:#176c9e;}
