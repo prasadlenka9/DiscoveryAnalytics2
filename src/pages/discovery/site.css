@@ -246,3 +246,14 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
   .da-client-logo-viewport{width:100%;}
   .da-home-hero,.da-subhero,.da-contact-hero{overflow:clip;}
 }
+
+/* White footer with accessible, consistent contrast. */
+.da-footer{background:#fff!important;color:#092d40!important;border-top:1px solid #d7e4eb;}
+.da-footer h2,.da-footer h3,.da-footer p,.da-footer span,.da-footer small,
+.da-footer-nav,.da-footer-nav a,.da-footer-bottom,.da-footer-bottom a{color:#092d40!important;}
+.da-footer-nav a:hover,.da-footer-bottom a:hover{color:#176c9e!important;}
+.da-footer-divider{background:#c9d9e2!important;border-color:#c9d9e2!important;}
+.da-footer-brand{background:transparent!important;color:#092d40!important;}
+.da-footer-brand-mark{background:transparent!important;}
+.da-footer-wordmark{color:#092d40!important;}
+.da-footer .da-eyebrow{color:#176c9e!important;}
