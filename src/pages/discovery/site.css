@@ -150,6 +150,11 @@ section.da-product-section .da-time-study>div{font-size:clamp(20px,2vw,30px);lin
 .da-partnership{background:linear-gradient(105deg,#e4f6fb,#eaf9ef);color:var(--ink)}
 .da-contact-hero{background:#e1f5fa}
 .da-location-card{background:#dff5e5}
+.da-footer{background:linear-gradient(120deg,#082b3d 0%,#0b3850 58%,#092d40 100%)}
+.da-footer-brand{display:inline-flex!important;align-items:center;gap:9px;margin:0!important;padding:0!important;background:transparent!important;color:#fff!important;text-decoration:none}
+.da-footer-brand-mark{display:block;flex:none;width:62px;height:56px;object-fit:cover;object-position:left center;background:transparent;border:0;box-shadow:none}
+.da-footer-wordmark{display:flex;flex-direction:column;gap:1px;color:#f3faff;font-size:16px;font-weight:650;line-height:1.02;letter-spacing:-.045em}
+@media(max-width:700px){.da-footer-brand-mark{width:62px;height:56px}.da-footer-wordmark{font-size:15px}}
 
 /* Footer branding and links stay clean against the dark footer. */
 .da-footer-promise .da-brand{background:transparent!important;padding:0!important;border-radius:0!important}

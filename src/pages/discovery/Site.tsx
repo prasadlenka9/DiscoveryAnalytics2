@@ -39,6 +39,13 @@ function Brand() {
   </Link>
 }
 
+function FooterBrand() {
+  return <Link to="/" className="da-footer-brand" aria-label="Discovery Analytics home">
+    <img className="da-footer-brand-mark" src="/images/discovery/brand/dalogo.png" alt="" />
+    <span className="da-footer-wordmark"><span>Discovery</span><span>Analytics</span></span>
+  </Link>
+}
+
 function SiteHeader() {
   const [open, setOpen] = useState(false)
   return <header className="da-header">
@@ -57,7 +64,7 @@ function SiteHeader() {
 function SiteFooter() {
   return <footer className="da-footer">
     <div className="da-footer-main">
-      <div className="da-footer-promise"><Brand /><h2>Technology. Talent.<br />Forward.</h2></div>
+      <div className="da-footer-promise"><FooterBrand /><h2>Technology. Talent.<br />Forward.</h2></div>
       <div className="da-footer-nav">
         <div><b>EXPLORE</b>{links.slice(1, 4).map(([label, href]) => <Link key={href} to={href}>{label}</Link>)}</div>
         <div><b>CONNECT</b><Link to="/careers">Careers <ArrowUpRight size={13} aria-hidden="true" /></Link><Link to="/contact">Contact <ArrowUpRight size={13} aria-hidden="true" /></Link><a href={`mailto:${HR}`}>Email us <ArrowUpRight size={13} aria-hidden="true" /></a></div>
@@ -195,7 +202,6 @@ function HeroAnimation() {
   return <div className="da-hero-art" role="img" aria-label="Sculptural cobalt, orange and violet forms representing connected intelligence">
     {!compactViewport && <Suspense fallback={null}><OrganicScene /></Suspense>}
     <div className="da-hero-art-label"><span>FIELD STUDY / 001</span><span>HUMAN + MACHINE</span></div>
-    <div className="da-hero-art-coordinate">DA <i>∞</i> 01</div>
   </div>
 }
 
